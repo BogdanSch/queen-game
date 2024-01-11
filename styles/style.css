@@ -1,0 +1,71 @@
+/* General - Start */
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap');
+
+.wrapper {
+    overflow: hidden;
+}
+
+body {
+    font-family: 'Poppins', sans-serif;
+}
+
+html {
+    scroll-behavior: smooth;
+}
+
+:root {
+    --accent: #6600ff;
+    --golden: #ecbe07;
+}
+
+.content {
+    max-width: 70%;
+    margin: 0 auto;
+}
+
+.game-card {
+    display: block;
+    min-width: 90px;
+    /* background-position: center; */
+    background-size: contain;
+    background-repeat: no-repeat;
+}
+
+/* General - End */
+/* Gueen - Start */
+.queen__message {
+    font-size: 24px;
+    font-weight: 600;
+}
+
+.queen__deck,
+.queen__played-cards {
+    padding: 10px;
+    width: 100%;
+    min-height: 300px;
+    display: flex;
+    flex-direction: row;
+    justify-content: flex-start;
+    flex-wrap: wrap;
+    column-gap: 6px;
+    row-gap: 6px;
+}
+
+.queen__deck {
+    background-color: var(--accent);
+}
+
+.queen__played-cards {
+    background-color: var(--golden);
+}
+
+#restartGameButton {
+    background-color: var(--accent) !important;
+}
+
+/* 
+.game-card{
+
+} */
+
+/* Queen - End */
