@@ -1,7 +1,25 @@
+import { Card } from "./card.js";
+import { Deck } from "./deck.js";
 import { Player } from "./player.js";
 
 export class CardGame {
-  constructor(gameMessageContainer, deckContainer, playedCardsContainer) {
+  constructor(
+    showGameMessage,
+    deckContainer,
+    playedCardsContainer,
+    showWinnerMessage,
+    player
+  ) {
+    this.showGameMessage = showGameMessage;
+    this.deckContainer = deckContainer;
+    this.playedCardsContainer = playedCardsContainer;
+    this.showWinnerMessage = showWinnerMessage;
+
+    this.draggedCard = null;
+    this.players = [player, new Player("Bot")];
+    this.currentPlayer = this.players[0];
+    this.botTurnDuration = 1000;
+
     this.denominations = [
       "two",
       "three",
@@ -18,47 +36,33 @@ export class CardGame {
       "ace",
     ];
     this.suits = ["Diamonds"];
-    this.deck = [];
-    this.gameMessageContainer = gameMessageContainer;
-    this.deckContainer = deckContainer;
-    this.playedCardsContainer = playedCardsContainer;
-    this.draggedCard = null;
-    this.players = [new Player("You"), new Player("Bot")];
-    this.currentPlayer = this.players[0];
+    this.targetDonomination = "queen";
+    this.gameOver = false;
   }
 
   initializeGame() {
+    this.currentPlayer = this.players[0];
+    this.showGameMessage(`${this.currentPlayer.toString()}'s Turn!`);
+
     this.createDeck();
-    this.shuffleDeck();
-    this.renderDeck();
+    this.deck.shuffle();
     this.addCardsEventListeners();
   }
 
   createDeck() {
+    this.deck = new Deck([], this.deckContainer);
+    this.playedCardsDeck = new Deck([], this.playedCardsContainer);
+
     for (const suit of this.suits) {
       for (const denomination of this.denominations) {
-        const card = document.createElement("div");
-        card.className = "game-card";
-        card.dataset.denomination = denomination;
-        card.dataset.suit = suit;
-        card.draggable = true;
-        card.style.backgroundImage = `url(./images/cards/shirt.png)`;
-        card.addEventListener("dragstart", (event) => {
-          this.draggedCard = event.target;
+        const card = new Card(suit, denomination);
+        card.renderCard();
+        card.cardObject.addEventListener("dragstart", (event) => {
+          this.draggedCard = card;
         });
-        this.deck.push(card);
+        this.deck.addCard(card);
       }
     }
-  }
-
-  shuffleDeck() {
-    this.deck.sort(() => Math.random() - 0.5);
-  }
-
-  renderDeck() {
-    this.deck.forEach((card) => {
-      this.deckContainer.appendChild(card);
-    });
   }
 
   addCardsEventListeners() {
@@ -69,60 +73,43 @@ export class CardGame {
     this.playedCardsContainer.addEventListener("drop", (event) => {
       if (
         this.draggedCard &&
-        this.draggedCard.classList.contains("game-card") &&
-        !this.playedCardsContainer.contains(this.draggedCard) &&
-        this.currentPlayer === this.players[0]
+        !this.playedCardsDeck.containsCard(this.draggedCard) &&
+        this.currentPlayer === this.players[0] &&
+        !this.gameOver
       ) {
-        this.currentPlayer = this.players[0];
-        this.deckContainer.removeChild(this.draggedCard);
-        this.playedCardsContainer.appendChild(this.draggedCard);
-        this.showCard(this.draggedCard);
-        this.botTurn();
+        this.deck.removeCard(this.draggedCard);
+        this.playedCardsDeck.addCard(this.draggedCard);
+        this.draggedCard.showCard();
+        this.checkWin();
+        if (!this.gameOver) {
+          this.botTurn();
+        }
       }
     });
-
-    this.playedCardsContainer.addEventListener("dragend", () =>
-      this.checkWin()
-    );
   }
 
   botTurn() {
+    this.currentPlayer = this.players[1];
+    this.showGameMessage(`${this.currentPlayer.toString()}'s Turn!`);
+
     setTimeout(() => {
-      this.currentPlayer = this.players[1];
-      const botCard = this.getRandomCard();
-      this.playedCardsContainer.appendChild(botCard);
-      this.showCard(botCard);
-    }, 1000);
-  }
+      const randomCard = this.deck.pullRandomCard();
+      this.playedCardsDeck.addCard(randomCard);
+      randomCard.showCard();
+      this.draggedCard = randomCard;
+      this.checkWin();
 
-  getRandomCard() {
-    const randomIndex = Math.floor(Math.random() * this.deck.length);
-    return this.deck.splice(randomIndex, 1)[0];
-  }
-
-  showCard(cardToShow) {
-    const denomination = cardToShow.dataset.denomination;
-    const suit = cardToShow.dataset.suit;
-    cardToShow.style.backgroundImage = `url("./images/cards/${suit} ${denomination}.png")`;
+      this.currentPlayer = this.players[0];
+      this.showGameMessage(`${this.currentPlayer.toString()}'s Turn!`);
+    }, this.botTurnDuration);
   }
 
   checkWin() {
-    const sortedCards = Array.from(this.playedCardsContainer.children).sort(
-      (a, b) => {
-        const denominationA = a.dataset.denomination;
-        const denominationB = b.dataset.denomination;
-        return (
-          this.denominations.indexOf(denominationA) -
-          this.denominations.indexOf(denominationB)
-        );
-      }
-    );
-
-    if (
-      JSON.stringify(Array.from(this.gameContainer.children)) ===
-      JSON.stringify(sortedCards)
-    ) {
-      this.winMessage.style.display = "block";
+    if (this.draggedCard.denomination === this.targetDonomination) {
+      this.gameOver = true;
+      this.showGameMessage(`Game Over!`);
+      this.showWinnerMessage(`${this.currentPlayer.toString()} wins the game!`);
     }
+    this.draggedCard = null;
   }
 }
